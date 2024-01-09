@@ -82,7 +82,7 @@ $ git clone https://github.com/rolazazz/archiproducts-ai
 $ cd archiproducts-ai
 $ cd py
 $ python -m venv .venv
-$ ./.venv/bin/activate
+$ ./.venv/Scripts/Activate.ps1
 $ pip install -r requirements.txt
 ```
 ### 1. OpenSearch cluster
