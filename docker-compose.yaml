@@ -11,7 +11,7 @@ services:
       - .env
     environment:
       - OPENSEARCH_HOST=opensearch-node1
-      - EMBEDDINGS_API_URL='http://openclip-api:7860/embeddings'
+      - EMBEDDINGS_API_URL=http://openclip-api:7860/embeddings
     ports:
       - "8000:8000"
     networks:
