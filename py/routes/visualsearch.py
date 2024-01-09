@@ -81,7 +81,7 @@ async def find_similar_products_by_id(
 				"bool":{
 					"must": [
 						{"knn": {
-							"cover_embedding":{
+							"cover_embeddings":{
 								"k": 50,
 								"vector": embeddings
 							}
@@ -165,7 +165,7 @@ async def find_similiar_products_by_image(
 					"bool":{
 						"must": [
 							{"knn": {
-								"cover_embedding":{
+								"cover_embeddings":{
 									"k": 50,
 									"vector": embeddings
 								}
