@@ -1,0 +1,108 @@
+version: '3.9'
+
+services:
+
+  app:
+    build:
+      context: ./py
+      dockerfile: Dockerfile
+    restart: on-failure
+    env_file:
+      - .env
+    environment:
+      - OPENSEARCH_HOST=opensearch-node1
+      - EMBEDDINGS_API_URL='http://openclip-api:7860/embeddings'
+    ports:
+      - "8000:8000"
+    networks:
+      - visualsearch-net
+    # extra_hosts:
+    #   - "rabbitmq:192.168.1.224"
+    depends_on:
+      opensearch-node1:
+        condition: service_started
+      opensearch-node2:
+        condition: service_started
+      openclip-api:
+        condition: service_started       
+
+  openclip-api:
+    image: robertolazazzera/openclip-api:latest
+    container_name: openclip-api
+    volumes:
+      - openclip-cache:/home/user/.cache
+    restart: on-failure
+    ports:
+      - "7860:7860"
+    networks:
+      - visualsearch-net
+
+  opensearch-node1:
+    image: opensearchproject/opensearch:${OPENSEARCH_VERSION}
+    container_name: opensearch-node1
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node1
+      - discovery.seed_hosts=opensearch-node1,opensearch-node2
+      - cluster.initial_master_nodes=opensearch-node1,opensearch-node2
+      - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
+      - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
+        hard: 65536
+    volumes:
+      - opensearch-data1:/usr/share/opensearch/data
+    ports:
+      - 9200:9200
+      - 9600:9600 # required for Performance Analyzer
+    networks:
+      - visualsearch-net
+  
+  opensearch-node2:
+    image: opensearchproject/opensearch:${OPENSEARCH_VERSION}
+    container_name: opensearch-node2
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node2
+      - discovery.seed_hosts=opensearch-node1,opensearch-node2
+      - cluster.initial_master_nodes=opensearch-node1,opensearch-node2
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data2:/usr/share/opensearch/data
+    networks:
+      - visualsearch-net
+  
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:${OPENSEARCH_VERSION}
+    container_name: opensearch-dashboards
+    ports:
+      - 5601:5601
+    expose:
+      - "5601"
+    environment:
+      OPENSEARCH_HOSTS: '["https://opensearch-node1:9200","https://opensearch-node2:9200"]'
+    networks:
+      - visualsearch-net
+
+volumes:
+  opensearch-data1:
+    name: "opensearch-data1"
+  opensearch-data2:
+    name: "opensearch-data2"
+  openclip-cache:
+    name: "openclip-cache"
+
+networks:
+  visualsearch-net:
