@@ -106,9 +106,8 @@ async def find_similar_products_by_id(
 
 @visualsearch_router.post('/reverse_search', response_model=list[Output])
 async def find_similiar_products_by_image(
-	inputs:	Annotated[Output,	Body()] = None,
-	url:	Annotated[str,	Form(description="The Url an image that will be used for similarity search")] = None, 
 	file:	Annotated[bytes,File(description="An attached binary file that will be used for similarity search")] = None,
+	url:	Annotated[str,	Form(description="The Url an image that will be used for similarity search")] = None, 
 	size: 	Annotated[int,	Form(description="The number of results to return", max=100)] = 10):
 	"""
 	### Reverse Image Search with a given image.
