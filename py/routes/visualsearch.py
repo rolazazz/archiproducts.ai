@@ -41,7 +41,7 @@ async def find_similar_products_by_id(
 
 	# lookup pregenerated embeddings by product_id or image_id
 	lookup_reponse = opensearch_client.search(
-		index= "embeddings-openclip-b-32",
+		index= base_config.INDEX_NAME,
 		body= {
 			"size": 1,
 			"query":{
@@ -74,7 +74,7 @@ async def find_similar_products_by_id(
 	product_id = results[0]['_source']['product_id']
 
 	search_response = opensearch_client.search(
-		index= "embeddings-openclip-b-32",
+		index= base_config.INDEX_NAME,
 		body= {
 			"size": size,
 			"query":{
@@ -157,7 +157,7 @@ async def find_similiar_products_by_image(
 		embeddings = json.loads(response.text).get('embeddings')[0]
 
 		search_response = opensearch_client.search(
-			index= "embeddings-openclip-b-32",
+			index= base_config.INDEX_NAME,
 			body= {
 				"size": size,
 				"query":{

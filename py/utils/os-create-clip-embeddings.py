@@ -41,8 +41,8 @@ def main():
 	for row in tqdm(parsed_json, desc='Processing json', total=len(parsed_json)):
 		try:
 				
-			filename = f"b_{row['CoverImage']['FileName']}"
-			filepath = f"{PATH_TO_IMAGES}{filename}"
+			filename = f"{row['CoverImage']['FileName']}"
+			filepath = f"{PATH_TO_IMAGES}b_{filename}"
 			image = Image.open(filepath)
 			embeddings = clip_image_embedding(image, preprocess, clipmodel, device).tolist()
 			# text = f"{row['Name']['Value']['en']} {row['ShortDescription']['Value']['en']} by {row['Manufacturer']['Name']}"
@@ -53,7 +53,7 @@ def main():
 				'product_shortdescription': row['ShortDescription']['Value']['en'],
 				'manufacturer_name': row['Manufacturer']['Name'],
 				'cover_id': filename,
-				'cover_name': os.path.basename(filename),
+				'cover_name': filename,
 				'cover_embeddings': embeddings,
 				# 'relative_path': os.path.relpath(filepath).split(PREFIX)[1],
 				# 'images': [image_map(x) for x in row['Images']],
