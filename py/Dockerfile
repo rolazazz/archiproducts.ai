@@ -1,5 +1,5 @@
 # BUILD the image: 
-# docker build . --tag archiproducts-ai:0.0.1 --tag archiproducts-ai:latest
+# docker build . --tag archiproducts-ai:0.0.1 --tag archiproducts-ai:latest --tag robertolazazzera/archiproducts-ai:latest
 # PUSH to registy
 # docker push robertolazazzera/archiproducts-ai:latest
 # RUN the container:

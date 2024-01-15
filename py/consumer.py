@@ -1,18 +1,18 @@
 import asyncio
 import logging
 import aio_pika
-
+from logging.handlers import RotatingFileHandler
 from config import base_config, RABBIT_URL
 from pika import message_router
 from localizations import consumer
 
-PARALLEL_TASKS = 2
+PARALLEL_TASKS = 4
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(levelname)s %(message)s',
     handlers=[
-        logging.FileHandler("logs/consumer.log", mode="a"),
+        RotatingFileHandler("logs/consumer.log", mode="a", maxBytes=10485760, backupCount=5),
         logging.StreamHandler()
     ]
 )

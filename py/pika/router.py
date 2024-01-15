@@ -1,6 +1,6 @@
 import json
 import logging
-
+import asyncio
 from aio_pika.abc import AbstractIncomingMessage
 
 from .tasks import test_task, product_changed_event_handler
@@ -14,8 +14,10 @@ async def message_router(
         if body.get('type') == 'test_message':
             return test_task(body)
         if 'urn:message:Edil.Shared.Contracts.Events:ProductChangedEvent' in body.get('messageType'):
-            return product_changed_event_handler(body)
-        return logging.info('Not recognized task type')
+            # return product_changed_event_handler(body)
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(None, product_changed_event_handler, body)
+        # return logging.info('Not recognized task type')
 
 
 __all__ = ['message_router']

@@ -5,6 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from routes import router
 from config import base_config, rabbit_connection
 import uvicorn
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 logging.basicConfig(

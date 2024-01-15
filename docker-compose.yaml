@@ -3,9 +3,11 @@ version: '3.9'
 services:
 
   app:
-    build:
-      context: ./py
-      dockerfile: Dockerfile
+    # build:
+    #   context: ./py
+    #   dockerfile: Dockerfile
+    image: robertolazazzera/archiproducts-ai:latest
+    container_name: app
     restart: on-failure
     env_file:
       - .env
@@ -20,9 +22,9 @@ services:
     #   - "rabbitmq:192.168.1.224"
     depends_on:
       opensearch-node1:
-        condition: service_started
+        condition: service_healthy
       opensearch-node2:
-        condition: service_started
+        condition: service_healthy
       openclip-api:
         condition: service_started       
 
@@ -61,6 +63,10 @@ services:
       - 9600:9600 # required for Performance Analyzer
     networks:
       - visualsearch-net
+    healthcheck:
+      interval: 30s
+      retries: 10
+      test: curl -ku '${OPENSEARCH_USER}:${OPENSEARCH_PASSWORD}' -s -f https://localhost:9200/_cat/health >/dev/null || exit 1
   
   opensearch-node2:
     image: opensearchproject/opensearch:${OPENSEARCH_VERSION}
@@ -83,6 +89,11 @@ services:
       - opensearch-data2:/usr/share/opensearch/data
     networks:
       - visualsearch-net
+    healthcheck:
+      interval: 30s
+      retries: 10
+      test: curl -ku '${OPENSEARCH_USER}:${OPENSEARCH_PASSWORD}' -s -f https://localhost:9200/_cat/health >/dev/null || exit 1
+
   
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:${OPENSEARCH_VERSION}

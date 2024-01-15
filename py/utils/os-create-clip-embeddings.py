@@ -1,4 +1,4 @@
-import sys, os, time, json, pathlib
+import sys, os, time, json, pathlib, argparse
 import open_clip, torch
 from PIL import Image
 from tqdm import tqdm
@@ -10,15 +10,19 @@ from config import opensearch_client, base_config
 
 
 PATH_TO_IMAGES = "C:\\AppData\\product-images\\"
-# DEST_INDEX = base_config.INDEX_NAME
-DEST_INDEX = "test"
 REBUILD_INDEX = True
 CHUNK_SIZE = 100
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--dest_index', dest='dest_index', required=False, default=base_config.INDEX_NAME,
+                    help="OpenSearch destination index. Default: " + base_config.INDEX_NAME)
+args = parser.parse_args()
 
 
 def main():
+	global args
 	lst = []
+	DEST_INDEX = args.dest_index
 
 	start_time = time.perf_counter()
 	device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -43,6 +47,7 @@ def main():
 			embeddings = clip_image_embedding(image, preprocess, clipmodel, device).tolist()
 			# text = f"{row['Name']['Value']['en']} {row['ShortDescription']['Value']['en']} by {row['Manufacturer']['Name']}"
 			doc = {
+				'_id': row['_id'],
 				'product_id' : row['_id'],
 				'product_name': row['Name']['Value']['en'],
 				'product_shortdescription': row['ShortDescription']['Value']['en'],

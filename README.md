@@ -6,6 +6,7 @@ The visual search system then analyzes the image’s visual characteristics and 
 ![](https://miro.medium.com/v2/resize:fit:720/format:webp/1*FwaIWPF8sOfXJWKh70PXoQ.png)
 *Image Similarity result based on Deep Learning, source: https://ioannotator.com/image-similarity-search*
 
+$~$
 
 ## How does visual product search work?
 AI visual search operates through a sophisticated interplay of image analysis, computer vision algorithms, and machine learning. Here’s a breakdown of how the process unfolds:
@@ -22,6 +23,7 @@ AI visual search operates through a sophisticated interplay of image analysis, c
 
 **Search results**: The system generates a set of search results based on the comparison. These results are usually displayed to the user as product thumbnails accompanied by relevant metadata such as labels, tags, or descriptions. Users can then explore the visually matched products.
 
+$~$
 
 ## Prominent examples of AI visual search engines
 Here are some prominent AI visual search engines that have gained traction in recent years:
@@ -32,6 +34,7 @@ Here are some prominent AI visual search engines that have gained traction in re
 
 **Pinterest Lens**: Pinterest Lens emerged in 2017, catering to users on the popular social media platform. It empowers users to discover analogous products and fresh ideas through images. While Google Lens and Bing Visual Search extend beyond their respective platforms, Pinterest Lens is restricted to images within Pinterest. Over time, Pinterest Lens has introduced features like the Shop tab, leading users to shoppable pins. It’s a preferred choice for finding home decor inspiration, fashion ideas, and recipes.
 
+$~$
 
 ## How do we define similarity?
 To build this system, we first need to define how we want to compute the similarity between two images. One widely popular practice is to compute dense representations (`embeddings`) of the given images and then use the cosine similarity metric to determine how similar the two images are.
@@ -40,6 +43,7 @@ To build this system, we first need to define how we want to compute the similar
 
 ![](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/image_similarity/embeddings.png)
 
+$~$
 
 ## Computing embeddings
 To compute the embeddings from the images, we'll use a vision model that has some understanding of how to represent the input images in the vector space. This type of model is also commonly referred to as image encoder.
@@ -47,9 +51,11 @@ To compute the embeddings from the images, we'll use a vision model that has som
 ### CLIP
 [**CLIP**](https://openai.com/research/clip) (Contrastive Language-Image Pre-training) is a method created by OpenAI for training models capable of aligning image and text representations. Images and text are drastically different modalities, but CLIP manages to map both to a shared space, allowing for all kinds of neat tricks.
 
+$~$
 
 ## Vector search algorithms
 The simple way to find similar vectors is to use k-nearest neighbors (`k-NN`) algorithms, which compute the distance between a query vector and the other vectors in the vector database.
+
 
 ### Approximate k-NN
 An approximate nearest neighbor approach uses one of several algorithms to return the approximate k-nearest neighbors to a query vector. Usually, these algorithms sacrifice indexing speed and search accuracy in return for performance benefits such as lower latency, smaller memory footprints, and more scalable search. Approximate k-NN is the best choice for searches over large indexes (that is, hundreds of thousands of vectors or more) that require low latency. You should not use approximate k-NN if you want to apply a filter on the index before the k-NN search, which greatly reduces the number of vectors to be searched. In this case, you should use either the score script method or painless extensions.
@@ -61,13 +67,20 @@ All search engines use a similarity metric to rank and sort results and bring th
 * **Cosine similarity** – The cosine of the angle between two vectors in a vector space.
 * **Inner product** – The product of the magnitudes of two vectors and the cosine of the angle between them. Usually used for natural language processing (NLP) vector similarity.
 
+$~$
 
+## Architecture
+![](architecture.png)
+
+$~$
 
 ## Requirements
 ### Python environment
 **Python v3.9+**
 
 Make sure, you can access and use Python.
+
+$~$
 
 ## How to
 Before starting using similarity search on your images, you must set up an OpenSearch/ElasticSearch cluster with data (indices) and NLP models.
@@ -87,17 +100,74 @@ $ pip install -r requirements.txt
 ```
 ### 1. OpenSearch cluster
 You can use the docker-compose bundled in the repository, your cluster, or the OpenSearch cloud service by Amazon AWS. To run the OpenSearch cluster locally, use the following docker-compose example.
-
-
-
-## Run the API locally
-Make sure that Python environment is set and all requirements are installed as described above and that you are in the main project folder.
 ```bash
-$ cd py
-$ python main.py
+# In the main directory 
+$ cd archiproducts-ai
+$ docker-compose up -d opensearch-node1 opensearch-node2 opensearch-dashboard
+```
+### 2. OpenCLIP API
+The CLIP model is hosted in a separate service and exposed as web api:
+```bash
+# In the main directory 
+$ docker-compose up -d openclip-api
+```
+Fore more details, follow the [documentation](https://github.com/rolazazz/openclip-api).
+
+### 3. Generate image embeddings
+Your next step is to generate the image embeddings from your photos. These embeddings will be used for kNN (vector) search in OpenSearch.
+
+**Put all your photos in to the folder `c:/AppData/product-images`.** You can use a script to download them starting from a json file.
+
+**Notes**:
+- for import we are using a file `catalog-product-all.json` located in `py/utils`
+- only jp(e)g file types were tested
+- you need to have hundreds of photos to get best results. If you have only a dozen of them, then vector search in the space you create is minimal, and distances between images (vectors) are very similar.
+
+```bash
+$ python py/utils/os-create-clip-embeddings.py --dest_index='my-image-embeddings'
+```
+You might see in the terminal similar output.
+```bash
+Duration load model = 8.466341299936175
+Processing json:   8%|▉         |  83/1000 [00:05<01:00, 15.06it/s]
+Processing json:  24%|██▌        | 237/1000 [00:15<00:48, 15.64it/s]
+Processing json:  55%|██████     | 546/1000 [00:35<00:28, 16.21it/s]
+Processing json: 100%|██████████ |1000/1000 [01:04<00:00, 15.39it/s]
+Duration creating image embeddings = 105.8246128000319
+Creating index 'my-image-embeddings'
+Indexed 100 documents
+Indexed 200 documents
+Indexed 500 documents
+Indexed 1000 documents
+Total duration = 116.50723149999976
+Done!
 ```
 
+After the script finishes, you can check if the index `my-image-embeddings` exists and has documents. Use OpenSearch Dashboard to check.
+```
+GET _cat/indices/my-image-embeddings?v
+```
+```
+health status index               uuid                   pri rep docs.count docs.deleted store.size pri.store.size
+green  open   my-image-embeddings vfA3wOheT1C79R-PceDyXg   1   1       1222            0     24.4mb         12.2mb
+```
 
+### 3B. Import with Elasticdump
+As alternative, you may import a dump with [elasticdump](https://github.com/elasticsearch-dump/elasticsearch-dump) utility:
+```bash
+$ npm install elasticdump
+# in elasticdump folder
+$ $env:NODE_TLS_REJECT_UNAUTHORIZED=0
+$ node_modules/.bin/elasticdump --output=https://admin:admin@localhost:9200/embeddings-openclip-b-32 --input=embeddings-openclip-b-32.index.json --type=index --limit=5000 --tlsAuth
+$ node_modules/.bin/elasticdump --output=https://admin:admin@localhost:9200/embeddings-openclip-b-32 --input=embeddings-openclip-b-32.data.json.gz --type=data --fsCompress --limit=5000 --tlsAuth
+```
+
+### 4. Run the FastAPI app locally
+Make sure that Python environment is set and all requirements are installed as described above and that you are in the main project folder.
+```bash
+$ python py/main.py
+```
+$~$
 
 ## How to run Archiproducts AI API in Docker 
 To run the application in a Docker container, we need to build it and then run the Docker image with the OpenCLIP/FastAPI application.
@@ -123,6 +193,8 @@ To run the application, we need to run the Docker image.
 $ docker run -d -p 8000:8000 --name archiproducts-ai archiproducts-ai:latest
 ```
 
+$~$
+
 ## Run with Docker-Compose
 You can use the docker-compose bundled in the repository to run:
 - an OpenSearch Service cluster locally with a persistent volume attached to each node
@@ -133,14 +205,11 @@ Use the following docker-compose example.
 
 ```bash
 $ cd archiproducts-ai
-$ docker-compose build app
 $ docker-compose up -d
 ```
 
-## How To
+$~$
 
+## Access the application
+The application is now up and running and is accessible on `http://127.0.0.1:8000` 
 
-
-
-
-https://github.com/kieled/fastapi-aiopika-boilerplate

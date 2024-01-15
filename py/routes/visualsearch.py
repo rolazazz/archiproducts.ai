@@ -26,7 +26,7 @@ def index():
 async def find_similar_products_by_id(
 	product_id:	Annotated[int,	Query(description="The product_id to search for similarity")] = None, 
 	image_id:	Annotated[str,	Query(description="The image_id to search for similarity")] = "",
-	size: 		Annotated[int,	Query(description="The number of results to return", max=100)] = 10):
+	size: 		Annotated[int,	Query(description="The number of results to return", max=100)] = 25):
 	"""
 	### Search visually similar products given a product_id or image_id.
 	Finds the most visually similar products to the query product.
@@ -108,7 +108,7 @@ async def find_similar_products_by_id(
 async def find_similiar_products_by_image(
 	file:	Annotated[bytes,File(description="An attached binary file that will be used for similarity search")] = None,
 	url:	Annotated[str,	Form(description="The Url an image that will be used for similarity search")] = None, 
-	size: 	Annotated[int,	Form(description="The number of results to return", max=100)] = 10):
+	size: 	Annotated[int,	Form(description="The number of results to return", max=100)] = 25):
 	"""
 	### Reverse Image Search with a given image.
 	A reverse image search is the use of a photo to search online without text.
