@@ -17,9 +17,6 @@ class Output(BaseModel):
 	product_shortdescription:str
 	score: float = Field(None, alias="_score")
 
-	# class Config:
-	# 	underscore_attrs_are_private = False
-
 
 @visualsearch_router.get("/")
 def index():
@@ -116,9 +113,9 @@ async def find_similar_products_by_id(
 async def find_similiar_products_by_image(
 	file:		Annotated[bytes,File(description="An attached binary file that will be used for similarity search")] = None,
 	url:		Annotated[str,	Form(description="The Url an image that will be used for similarity search")] = None, 
-	from_:	 	Annotated[int,	Query(description="Starting document offset. Needs to be non-negative and defaults to 0.", alias="from", min=0)] = 0,
-	size: 		Annotated[int,	Query(description="Defines the number of hits to return. Defaults to 25.", max=100)] = 25,
-	min_score:	Annotated[float,Query(description="Minimum _score for matching documents: documents with a lower _score are not included in the search results", max=1)] = 0):
+	from_:	 	Annotated[int,	Form(description="Starting document offset. Needs to be non-negative and defaults to 0.", alias="from", min=0)] = 0,
+	size: 		Annotated[int,	Form(description="Defines the number of hits to return. Defaults to 25.", max=100)] = 25,
+	min_score:	Annotated[float,Form(description="Minimum _score for matching documents: documents with a lower _score are not included in the search results", max=1)] = 0):
 	"""
 	### Reverse Image Search with a given image.
 	A reverse image search is the use of a photo to search online without text.
