@@ -1,7 +1,7 @@
 # "images" submodule, e.g. import routers.images
 
 from fastapi import APIRouter, File, Form, Body, Query, UploadFile, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from config import rabbit_connection, opensearch_client, base_config
 import requests, json, base64
 from typing import Annotated
@@ -15,6 +15,10 @@ class Output(BaseModel):
 	product_id: int
 	product_name: str
 	product_shortdescription:str
+	score: float = Field(None, alias="_score")
+
+	# class Config:
+	# 	underscore_attrs_are_private = False
 
 
 @visualsearch_router.get("/")
@@ -26,7 +30,9 @@ def index():
 async def find_similar_products_by_id(
 	product_id:	Annotated[int,	Query(description="The product_id to search for similarity")] = None, 
 	image_id:	Annotated[str,	Query(description="The image_id to search for similarity")] = "",
-	size: 		Annotated[int,	Query(description="The number of results to return", max=100)] = 25):
+	from_:	 	Annotated[int,	Query(description="Starting document offset. Needs to be non-negative and defaults to 0.", alias="from", min=0)] = 0,
+	size: 		Annotated[int,	Query(description="Defines the number of hits to return. Defaults to 25.", max=100)] = 25,
+	min_score:	Annotated[float,Query(description="Minimum _score for matching documents: documents with a lower _score are not included in the search results", max=1)] = 0):
 	"""
 	### Search visually similar products given a product_id or image_id.
 	Finds the most visually similar products to the query product.
@@ -76,7 +82,9 @@ async def find_similar_products_by_id(
 	search_response = opensearch_client.search(
 		index= base_config.INDEX_NAME,
 		body= {
+			"from": from_,
 			"size": size,
+			"min_score": min_score,
 			"query":{
 				"bool":{
 					"must": [
@@ -95,20 +103,22 @@ async def find_similar_products_by_id(
 						}}
 					]
 				}
-			}	
+			}
 		},
 		_source= ["product_id", "manufacturer_name", "product_name", "product_shortdescription"]	
 	)
 
-	return [item["_source"] for item in search_response['hits']['hits']]
+	return [{**item["_source"], **{'_score':item["_score"]}} for item in search_response['hits']['hits']]
 
 
 
 @visualsearch_router.post('/reverse_search', response_model=list[Output])
 async def find_similiar_products_by_image(
-	file:	Annotated[bytes,File(description="An attached binary file that will be used for similarity search")] = None,
-	url:	Annotated[str,	Form(description="The Url an image that will be used for similarity search")] = None, 
-	size: 	Annotated[int,	Form(description="The number of results to return", max=100)] = 25):
+	file:		Annotated[bytes,File(description="An attached binary file that will be used for similarity search")] = None,
+	url:		Annotated[str,	Form(description="The Url an image that will be used for similarity search")] = None, 
+	from_:	 	Annotated[int,	Query(description="Starting document offset. Needs to be non-negative and defaults to 0.", alias="from", min=0)] = 0,
+	size: 		Annotated[int,	Query(description="Defines the number of hits to return. Defaults to 25.", max=100)] = 25,
+	min_score:	Annotated[float,Query(description="Minimum _score for matching documents: documents with a lower _score are not included in the search results", max=1)] = 0):
 	"""
 	### Reverse Image Search with a given image.
 	A reverse image search is the use of a photo to search online without text.
@@ -159,7 +169,9 @@ async def find_similiar_products_by_image(
 		search_response = opensearch_client.search(
 			index= base_config.INDEX_NAME,
 			body= {
-				"size": size,
+			"from": from_,
+			"size": size,
+			"min_score": min_score,
 				"query":{
 					"bool":{
 						"must": [
@@ -176,7 +188,7 @@ async def find_similiar_products_by_image(
 			_source= ["product_id", "manufacturer_name", "product_name", "product_shortdescription"]	
 		)
 
-		return [item["_source"] for item in search_response['hits']['hits']]
+		return [{**item["_source"], **{'_score':item["_score"]}} for item in search_response['hits']['hits']]
 
 	except Exception as exc:
 		raise HTTPException(status_code=503, detail=str(exc))
