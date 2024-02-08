@@ -25,13 +25,12 @@ stages:
       inputs:
         command: build
         dockerfile: '$(Build.SourcesDirectory)/py/Dockerfile'
-        tags: |
-          $(tag)
+        tags: '$(Build.BuildNumber)'
 
     - task: ECRPushImage@1
       displayName: 'Push on ECR'
       inputs:
-        awsCredentials: 'S3 Edilportale'
+        awsCredentials: 'aws_registry'
         regionName: 'eu-south-1'
         sourceImageName: '$(Build.DefinitionName)'
         sourceImageTag: '$(Build.BuildNumber)'
