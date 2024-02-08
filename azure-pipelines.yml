@@ -25,6 +25,7 @@ stages:
       inputs:
         command: build
         dockerfile: '$(Build.SourcesDirectory)/py/Dockerfile'
+        repository: '$(Build.DefinitionName)'
         tags: '$(Build.BuildNumber)'
 
     - task: ECRPushImage@1
