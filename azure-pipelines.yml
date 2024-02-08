@@ -20,7 +20,7 @@ stages:
   - job: Build
     displayName: Build
     pool:
-      name: default
+      name: k8sBuild
     steps:
     - task: Docker@2
       displayName: Build an image
