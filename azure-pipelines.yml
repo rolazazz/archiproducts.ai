@@ -23,7 +23,7 @@ stages:
     - task: Docker@2
       displayName: 'Build an image'
       inputs:
-        repository: 'archiproducts.ai'
+        repository: 'archiproducts.aiii'
         command: 'build'
         Dockerfile: '**/Dockerfile'
         tags: |
