@@ -14,6 +14,8 @@ variables:
 stages:
 - stage: Build
   displayName: Build image
+  pool:
+    name: 'k8sBuild'
   jobs:
   - job: Build
     displayName: Build
