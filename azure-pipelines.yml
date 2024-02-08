@@ -34,9 +34,9 @@ stages:
         awsCredentials: 'aws_registry'
         regionName: 'eu-south-1'
         sourceImageName: '$(Build.DefinitionName)'
-        sourceImageTag: 'latest'
+        sourceImageTag: '$(Build.BuildNumber)'
         repositoryName: '$(Build.DefinitionName)'
-        pushTag: 'latest'
+        pushTag: '$(Build.BuildNumber)'
         autoCreateRepository: true
         removeDockerImage: true
         logRequest: true
