@@ -31,7 +31,7 @@ stages:
     - task: ECRPushImage@1
       displayName: 'Push on ECR'
       inputs:
-        awsCredentials: 'aws_registry'
+        awsCredentials: 'S3 Edilportale'
         regionName: 'eu-south-1'
         sourceImageName: '$(Build.DefinitionName)'
         sourceImageTag: '$(Build.BuildNumber)'
