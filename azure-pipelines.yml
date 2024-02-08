@@ -4,7 +4,9 @@
 
 trigger:
 - main
-
+pool:
+ name: k8sBuild 
+ 
 resources:
 - repo: self
 
