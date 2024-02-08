@@ -35,7 +35,9 @@ stages:
         regionName: 'eu-south-1'
         sourceImageName: '$(REPOSITORY_NAME)'
         sourceImageTag: 'latest'
-        repositoryName: $(REPOSITORY_NAME)'
+        repositoryName: '$(REPOSITORY_NAME)'
         pushTag: 'latest'
         autoCreateRepository: true
         removeDockerImage: true
+        logRequest: true
+        logResponse: true
