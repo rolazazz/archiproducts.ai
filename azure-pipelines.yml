@@ -21,9 +21,21 @@ stages:
       name: k8sBuild
     steps:
     - task: Docker@2
-      displayName: Build an image
+      displayName: 'Build an image'
       inputs:
         command: build
         dockerfile: '$(Build.SourcesDirectory)/py/Dockerfile'
         tags: |
           $(tag)
+
+    - task: ECRPushImage@1
+      displayName: 'Push on ECR'
+      inputs:
+        awsCredentials: 'aws_registry'
+        regionName: 'eu-south-1'
+        sourceImageName: '$(REPOSITORY_NAME)'
+        sourceImageTag: 'latest'
+        repositoryName: $(REPOSITORY_NAME)'
+        pushTag: 'latest'
+        autoCreateRepository: true
+        removeDockerImage: true
