@@ -4,8 +4,6 @@
 
 trigger:
 - main
-pool:
- name: k8sBuild 
 
 resources:
 - repo: self
@@ -27,6 +25,5 @@ stages:
       inputs:
         command: build
         dockerfile: '$(Build.SourcesDirectory)/py/Dockerfile'
-        buildContext: '/py'
         tags: |
           $(tag)
