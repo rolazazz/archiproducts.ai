@@ -40,3 +40,4 @@ stages:
         removeDockerImage: false
         logRequest: true
         logResponse: true
+        forceDockerNamingConventions: true
