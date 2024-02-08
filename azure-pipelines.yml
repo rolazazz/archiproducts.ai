@@ -30,13 +30,13 @@ stages:
     - task: ECRPushImage@1
       displayName: 'Push on ECR'
       inputs:
-        awsCredentials: 'S3 Edilportale'
+        awsCredentials: 'aws_registry'
         regionName: 'eu-south-1'
         sourceImageName: '$(Build.DefinitionName)'
         sourceImageTag: '$(Build.BuildNumber)'
         repositoryName: '$(Build.DefinitionName)'
         pushTag: '$(Build.BuildNumber)'
         autoCreateRepository: true
-        removeDockerImage: true
+        removeDockerImage: false
         logRequest: true
         logResponse: true
