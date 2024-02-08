@@ -33,7 +33,7 @@ stages:
       inputs:
         awsCredentials: 'aws_registry'
         regionName: 'eu-south-1'
-        sourceImageName: '$(Build.DefinitionName)'
+        sourceImageName: '$(Build.Repository.Name)'
         sourceImageTag: '$(Build.BuildNumber)'
         repositoryName: 'archiproducts.ai'
         pushTag: '$(Build.BuildNumber)'
