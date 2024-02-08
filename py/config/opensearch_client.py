@@ -10,4 +10,5 @@ opensearch_client = OpenSearch(
 						ssl_assert_hostname = False,
 						ssl_show_warn = False,
 						http_compress = False, # enables gzip compression for request bodies
+						pool_maxsize = 10
 					)
