@@ -25,8 +25,9 @@ stages:
       inputs:
         command: build
         dockerfile: '$(Build.SourcesDirectory)/py/Dockerfile'
-        repository: '$(Build.DefinitionName)'
-        tags: '$(Build.BuildNumber)'
+        repository: 'archiproducts.ai'
+        tags: |
+          $(tag)
 
     - task: ECRPushImage@1
       displayName: 'Push on ECR'
@@ -35,10 +36,7 @@ stages:
         regionName: 'eu-south-1'
         sourceImageName: '$(Build.DefinitionName)'
         sourceImageTag: '$(Build.BuildNumber)'
-        repositoryName: '$(Build.DefinitionName)'
+        repositoryName: 'archiproducts.ai'
         pushTag: '$(Build.BuildNumber)'
         autoCreateRepository: true
-        removeDockerImage: false
-        logRequest: true
-        logResponse: true
-        forceDockerNamingConventions: true
+        removeDockerImage: true
