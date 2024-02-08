@@ -28,7 +28,6 @@ stages:
         repository: 'archiproducts.ai'
         tags: |
           $(tag)
-
     - task: ECRPushImage@1
       displayName: 'Push on ECR'
       inputs:
