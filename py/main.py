@@ -1,4 +1,5 @@
 import logging
+from logging.handlers import RotatingFileHandler
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,7 +15,7 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s %(levelname)s %(message)s',
     handlers=[
-        logging.FileHandler("logs/fastapi.log", mode="a"),
+        RotatingFileHandler("logs/fastapi.log", mode="a", maxBytes=10485760, backupCount=5),
         logging.StreamHandler()
     ]
 )
