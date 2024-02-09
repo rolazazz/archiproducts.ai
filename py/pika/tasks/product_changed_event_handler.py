@@ -18,21 +18,23 @@ def product_changed_event_handler(message: dict):
 			headers={'appkey':'A1E6B816-4661-46C9-B117-91955C8564E3', 'Accept-Encoding':'gzip, deflate', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36'})
 		logging.info(f'https://www.archiproducts.com/api/products/{product_id}, duration = {str(response.elapsed)}')
 		
+		# the product may not exists...
+		if response.ok == False:
+			logging.info(f"Product (id={product_id}) doesn't exist")
+			pass
+
 		# extracting data in json format
 		data = response.json()
 		im_url = data['Image']['Formats']['Large']
 
-		# encode image
-		request = session.get(im_url, headers={'whoiam': 'edl-worker', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36'})
-		if request.ok == False:
+		# coverimage base64 encoding
+		response = session.get(im_url, headers={'whoiam': 'edl-worker', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36'})
+		if response.ok == False:
 			raise logging.error(f"Unable to download image ({im_url})")
-		file = request.content
+		file = response.content
 		im_text = base64.b64encode(file).decode('utf-8')
 
-	# except Exception:
-	# 	pass
-
-	# try:
+		# get embeddings with ML model
 		response = session.post(
 			url=	base_config.EMBEDDINGS_API_URL, 
 			headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
