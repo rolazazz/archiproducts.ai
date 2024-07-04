@@ -35,8 +35,9 @@ async def find_similar_products_by_id(
 	Finds the most visually similar products to the query product.
 	To achive this we need to compute dense representations (embeddings) of the given images and then use the cosine similarity metric to determine how similar the two images are.
 	### Args:
-	* **url** (string): Url of an image to use for similarity search.
-	* **file** (File): File attachment used for similarity search.
+	* **product_id** (int): the product_id to search for similarity.
+	* **image_id** (string): the image_id to search for similarity.
+	* **from** (int): starting document offset. Needs to be non-negative and defaults to 0.
 	* **size** (int): number of results to returns.
 	### Returns:
 	(List[Product]): list of product data
@@ -108,7 +109,6 @@ async def find_similar_products_by_id(
 	return [{**item["_source"], **{'_score':item["_score"]}} for item in search_response['hits']['hits']]
 
 
-
 @visualsearch_router.post('/reverse_search', response_model=list[Output])
 async def find_similiar_products_by_image(
 	file:		Annotated[bytes,File(description="An attached binary file that will be used for similarity search")] = None,
@@ -166,9 +166,9 @@ async def find_similiar_products_by_image(
 		search_response = opensearch_client.search(
 			index= base_config.INDEX_NAME,
 			body= {
-			"from": from_,
-			"size": size,
-			"min_score": min_score,
+				"from": from_,
+				"size": size,
+				"min_score": min_score,
 				"query":{
 					"bool":{
 						"must": [
@@ -179,6 +179,103 @@ async def find_similiar_products_by_image(
 								}
 							}}
 						]
+					}
+				}	
+			},
+			_source= ["product_id", "manufacturer_name", "product_name", "product_shortdescription"]	
+		)
+
+		return [{**item["_source"], **{'_score':item["_score"]}} for item in search_response['hits']['hits']]
+
+	except Exception as exc:
+		raise HTTPException(status_code=503, detail=str(exc))
+
+
+@visualsearch_router.post('/hybrid_search', response_model=list[Output])
+async def find_products_by_hybrid_search(
+	query:		Annotated[str,	Body(description="Query of the image to search")] = None, 
+	from_:	 	Annotated[int,	Body(description="Starting document offset. Needs to be non-negative and defaults to 0.", alias="from", min=0)] = 0,
+	size: 		Annotated[int,	Body(description="Defines the number of hits to return. Defaults to 25.", max=100)] = 25,
+	# min_score:	Annotated[float,Form(description="Minimum _score for matching documents: documents with a lower _score are not included in the search results", max=1)] = 0
+	):
+	"""
+	### Hybrid Search with a given query.
+	Combines semantic search into textual fields and text-to-image search of product's CoverImage.
+	If the exact product doesn’t appear, very similar ones pop up.
+	### Args:
+	* **query** (string): a search phrase to search for.
+	* **from** (int): starting document offset. Needs to be non-negative and defaults to 0.
+	* **size** (int): number of results to returns.
+	### Returns:
+	(List[Product]): list of product data
+	"""
+	if not query:
+		raise HTTPException(status_code=400, detail="the parameter 'query' is mandatory")
+
+	try:
+		response = requests.post(
+			url=	base_config.EMBEDDINGS_API_URL, 
+			headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
+			timeout=base_config.EMBEDDINGS_API_TIMEOUT,
+			data=	'{"text": "'+query+'"}'
+		)
+		# response = requests.post(url= URL, headers= headers, data= json.dumps({"text":"sofa"}), files = {"form_field_name": file})
+	except requests.exceptions.ReadTimeout:
+		raise HTTPException(status_code=408, detail="Timeout generating embeddings from input image")
+	
+	except Exception as exc:
+		raise HTTPException(status_code=500, detail=str(exc))
+	
+	if response.ok == False or ():
+		raise HTTPException(status_code=500, detail="Unable to generate embeddings from input image")
+
+
+	try:
+		clip_vector = json.loads(response.text).get('embeddings')[0]
+
+		search_response = opensearch_client.search(
+			index= base_config.INDEX_NAME,
+			body= {
+				"from": from_,
+				"size": size,
+				# "min_score": min_score,
+				"query":{
+					"bool":{
+						"should" : [
+							{
+							"knn": {
+								"cover_embeddings":{
+									"k": 500,
+									"vector": clip_vector,
+									"boost": 1.5
+								}
+							}}
+							,
+							# {
+							# "knn": {
+							# 	"text_embeddings":{
+							# 		"k": 500,
+							# 		"vector": st_vector,
+							# 		"boost": 1.0
+							# 	}
+							# }}
+							# ,
+							{
+							"term" : {
+								"product_name": {
+									"value":query,
+									"boost": 0.1
+								} 
+							}}
+							,
+							{
+							"term" : {
+								"manufacturer_name": {
+									"value":query,
+									"boost": 0.1
+								} 
+							}}
+						] 
 					}
 				}	
 			},
