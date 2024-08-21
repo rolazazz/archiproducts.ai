@@ -31,10 +31,10 @@
 		},
 		"text_embeddings": {
 			"type": "knn_vector",
-			"dimension": 512,
+			"dimension": 1024,
 			"method": {
 				"name": "hnsw",
-				"space_type": "l2",
+				"space_type": "cosinesimil",
 				"engine": "nmslib",
 				"parameters": {"ef_construction": 512, "m": 16}
 			}

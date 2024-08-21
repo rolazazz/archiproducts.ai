@@ -1,5 +1,6 @@
 import sys, os, time, json, pathlib, argparse
 import open_clip, torch
+from sentence_transformers import SentenceTransformer
 from PIL import Image
 from tqdm import tqdm
 from opensearchpy import SSLError
@@ -31,6 +32,8 @@ def main():
 	# clipmodel, _, preprocess = open_clip.create_model_and_transforms('ViT-L-14', pretrained='laion2b_s32b_b82k', device=device)
 	tokenizer = open_clip.get_tokenizer('ViT-B-32')
 
+	st_model = SentenceTransformer('intfloat/multilingual-e5-large', device=device)
+
 	duration = time.perf_counter() - start_time
 	print(f'Duration load model = {duration}')
 
@@ -45,7 +48,7 @@ def main():
 			filepath = f"{PATH_TO_IMAGES}b_{filename}"
 			image = Image.open(filepath)
 			embeddings = clip_image_embedding(image, preprocess, clipmodel, device).tolist()
-			# text = f"{row['Name']['Value']['en']} {row['ShortDescription']['Value']['en']} by {row['Manufacturer']['Name']}"
+			text = f"passage: {row['Name']['Value']['en']} {row['Categories'][0]['NameSingular']['en']} ({', '.join([x['NameSingular']['en'] for x in row['Attributes']])}), produced by {row['Manufacturer']['Name']}{', design by ' if row['Designers'] else ''}{' '.join([x['Name'] for x in row['Designers']])}"
 			doc = {
 				'_id': row['_id'],
 				'product_id' : row['_id'],
@@ -57,7 +60,7 @@ def main():
 				'cover_embeddings': embeddings,
 				# 'relative_path': os.path.relpath(filepath).split(PREFIX)[1],
 				# 'images': [image_map(x) for x in row['Images']],
-				# 'text_embeddings': clip_text_embedding(text, clipmodel, tokenizer, device).tolist()
+                'text_embeddings': st_model.encode(text, convert_to_tensor=True, device=device).tolist()
 			}
 			lst.append(doc)
 			

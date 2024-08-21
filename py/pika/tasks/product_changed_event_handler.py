@@ -41,7 +41,17 @@ def product_changed_event_handler(message: dict):
 			timeout=base_config.EMBEDDINGS_API_TIMEOUT,
 			data=	'{"image": "'+im_text+'"}'
 		)
-		embeddings = response.json().get('embeddings')[0]
+		im_embeddings = response.json().get('embeddings')[0]
+
+		text = f"passage: {data['Name']['Value']['en']} {data['Categories'][0]['NameSingular']['en']} ({', '.join([x['NameSingular']['en'] for x in data['Attributes']])}), produced by {data['Manufacturer']['Name']}{', design by ' if data['Designers'] else ''}{' '.join([x['Name'] for x in data['Designers']])}"
+		response = session.post(
+			url=	base_config.EMBEDDINGS_API_URL, 
+			headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
+			timeout=base_config.EMBEDDINGS_API_TIMEOUT,
+			data=	'{"text": "passage: '+text+'"}'
+		)
+		tx_embeddings = response.json().get('embeddings')[0]
+
 		logging.info(f'embedding genneration, duration = {str(response.elapsed)}')
 
 	except requests.exceptions.ReadTimeout:
@@ -55,6 +65,7 @@ def product_changed_event_handler(message: dict):
 
 
 	try:
+
 		doc = {
 				'product_id' : data['Id'],
 				'product_name': data['Name'],
@@ -62,7 +73,8 @@ def product_changed_event_handler(message: dict):
 				'manufacturer_name': data['Manufacturer']['Name'],
 				'cover_id': data['Image']['FileName'],
 				'cover_name': os.path.basename(data['Image']['FileName']),
-				'cover_embeddings': embeddings,
+				'cover_embeddings': im_embeddings,
+				'text_embeddings': tx_embeddings
 			}
 		response = opensearch_client.index(
 			index = base_config.INDEX_NAME,

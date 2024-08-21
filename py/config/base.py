@@ -15,7 +15,8 @@ class Base(BaseSettings):
     
     INDEX_NAME: str = "embeddings-openclip-b-32"
     
-    EMBEDDINGS_API_URL: str = "http://localhost:7860/embeddings"
+    EMBEDDINGS_API_CLIP_URL: str = "http://localhost:7860/clip-embed"
+    EMBEDDINGS_API_E5_URL: str = "http://localhost:7860/e5-embed"
     EMBEDDINGS_API_HEADERS: str = "{}"
     EMBEDDINGS_API_TIMEOUT: float = 5.0
     

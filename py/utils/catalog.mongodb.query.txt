@@ -9,8 +9,9 @@ db.getCollection('product')
       'ShortDescription.Value.en': 1,
       'Manufacturer.Name': 1,
       'CoverImage.FileName': 1,
-      'Images.Type': 1,
-      'Images.FileName': 1
+      'Designers.Name': 1,
+      'Categories.NameSingular.en': 1,
+      'Attributes.NameSingular.en': 1
     }
   )
   .sort({ _id: -1 });

@@ -144,7 +144,7 @@ async def find_similiar_products_by_image(
 
 	try:
 		response = requests.post(
-			url=	base_config.EMBEDDINGS_API_URL, 
+			url=	base_config.EMBEDDINGS_API_CLIP_URL, 
 			headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
 			timeout=base_config.EMBEDDINGS_API_TIMEOUT,
 			data=	'{"image": "'+im_text+'"}'
@@ -213,25 +213,35 @@ async def find_products_by_hybrid_search(
 		raise HTTPException(status_code=400, detail="the parameter 'query' is mandatory")
 
 	try:
-		response = requests.post(
-			url=	base_config.EMBEDDINGS_API_URL, 
+		im_response = requests.post(
+			url=	base_config.EMBEDDINGS_API_CLIP_URL, 
 			headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
 			timeout=base_config.EMBEDDINGS_API_TIMEOUT,
 			data=	'{"text": "'+query+'"}'
 		)
 		# response = requests.post(url= URL, headers= headers, data= json.dumps({"text":"sofa"}), files = {"form_field_name": file})
+		txt_response = requests.post(
+			url=	base_config.EMBEDDINGS_API_E5_URL, 
+			headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
+			timeout=base_config.EMBEDDINGS_API_TIMEOUT,
+			data=	'{"text": "query: '+query+'"}'
+		)
+
 	except requests.exceptions.ReadTimeout:
 		raise HTTPException(status_code=408, detail="Timeout generating embeddings from input image")
 	
 	except Exception as exc:
 		raise HTTPException(status_code=500, detail=str(exc))
 	
-	if response.ok == False or ():
+	if im_response.ok == False or ():
 		raise HTTPException(status_code=500, detail="Unable to generate embeddings from input image")
+	if txt_response.ok == False or ():
+		raise HTTPException(status_code=500, detail="Unable to generate embeddings from input text")
 
 
 	try:
-		clip_vector = json.loads(response.text).get('embeddings')[0]
+		clip_vector = json.loads(im_response.text).get('embeddings')[0]
+		e5_vector = json.loads(txt_response.text).get('embeddings')[0]
 
 		search_response = opensearch_client.search(
 			index= base_config.INDEX_NAME,
@@ -251,15 +261,14 @@ async def find_products_by_hybrid_search(
 								}
 							}}
 							,
-							# {
-							# "knn": {
-							# 	"text_embeddings":{
-							# 		"k": 500,
-							# 		"vector": st_vector,
-							# 		"boost": 1.0
-							# 	}
-							# }}
-							# ,
+							{
+							"knn": {
+								"text_embeddings":{
+									"k": 500,
+									"vector": e5_vector,
+									"boost": 1.0
+								}
+							}},
 							{
 							"term" : {
 								"product_name": {
