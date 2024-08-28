@@ -36,7 +36,7 @@ def product_changed_event_handler(message: dict):
 
 		# get embeddings with ML model
 		response = session.post(
-			url=	base_config.EMBEDDINGS_API_URL, 
+			url=	base_config.EMBEDDINGS_API_CLIP_URL, 
 			headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
 			timeout=base_config.EMBEDDINGS_API_TIMEOUT,
 			data=	'{"image": "'+im_text+'"}'
@@ -45,7 +45,7 @@ def product_changed_event_handler(message: dict):
 
 		text = f"passage: {data['Name']['Value']['en']} {data['Categories'][0]['NameSingular']['en']} ({', '.join([x['NameSingular']['en'] for x in data['Attributes']])}), produced by {data['Manufacturer']['Name']}{', design by ' if data['Designers'] else ''}{' '.join([x['Name'] for x in data['Designers']])}"
 		response = session.post(
-			url=	base_config.EMBEDDINGS_API_URL, 
+			url=	base_config.EMBEDDINGS_API_E5_URL, 
 			headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
 			timeout=base_config.EMBEDDINGS_API_TIMEOUT,
 			data=	'{"text": "passage: '+text+'"}'

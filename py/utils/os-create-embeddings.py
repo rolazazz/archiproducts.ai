@@ -10,7 +10,7 @@ sys.path.insert(0, str(pathlib.Path(os.path.dirname(__file__)).parent))
 from config import opensearch_client, base_config
 
 
-PATH_TO_IMAGES = "C:\\AppData\\product-images\\"
+PATH_TO_IMAGES = "D:\\AppData\\product-images\\"
 REBUILD_INDEX = True
 CHUNK_SIZE = 100
 
@@ -28,9 +28,8 @@ def main():
 	start_time = time.perf_counter()
 	device = "cuda" if torch.cuda.is_available() else "cpu"
 
-	clipmodel, _, preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained='laion2b_s34b_b79k', device=device)
-	# clipmodel, _, preprocess = open_clip.create_model_and_transforms('ViT-L-14', pretrained='laion2b_s32b_b82k', device=device)
-	tokenizer = open_clip.get_tokenizer('ViT-B-32')
+	clipmodel, _, preprocess = open_clip.create_model_and_transforms('xlm-roberta-base-ViT-B-32', pretrained='laion5b_s13b_b90k', device=device)
+	tokenizer = open_clip.get_tokenizer('xlm-roberta-base-ViT-B-32')
 
 	st_model = SentenceTransformer('intfloat/multilingual-e5-large', device=device)
 
@@ -38,7 +37,7 @@ def main():
 	print(f'Duration load model = {duration}')
 
 	with open('./py/utils/catalog-product-all.json',  encoding="utf8") as user_file:
-		parsed_json = json.load(user_file)[:1000]
+		parsed_json = json.load(user_file)[:1000000]
 
 	#for row in tqdm(parsed_json, desc='Processing json', total=len(parsed_json)):
 	for row in tqdm(parsed_json, desc='Processing json', total=len(parsed_json)):
