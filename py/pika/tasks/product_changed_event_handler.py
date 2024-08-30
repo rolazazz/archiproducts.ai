@@ -43,7 +43,7 @@ def product_changed_event_handler(message: dict):
 		)
 		im_embeddings = response.json().get('embeddings')[0]
 
-		text = f"passage: {data['Name']['Value']['en']} {data['Categories'][0]['NameSingular']['en']} ({', '.join([x['NameSingular']['en'] for x in data['Attributes']])}), produced by {data['Manufacturer']['Name']}{', design by ' if data['Designers'] else ''}{' '.join([x['Name'] for x in data['Designers']])}"
+		text = f"passage: {data['Name']} {data['ShortDescription']} ({', '.join([x['Name'] for x in data['Features']+data['Materials']+data['Styles'] ])}), produced by {data['Manufacturer']['Name']}{', design by ' if data['Designers'] else ''}{' '.join([x['Name'] for x in data['Designers']])}"
 		response = session.post(
 			url=	base_config.EMBEDDINGS_API_E5_URL, 
 			headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
