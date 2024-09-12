@@ -5,7 +5,7 @@ from aio_pika.abc import AbstractIncomingMessage
 
 from .tasks import test_task, product_changed_event_handler
 
-fieldsToWatch = set(['Name','ShortDescription','CoverImage','Attributes','Materials','Styles','Features','Designers'])
+fieldsToWatch = set(['*','Name','ShortDescription','CoverImage','Attributes','Materials','Styles','Features','Designers','ProductStatus'])
 
 async def message_router(
         message: AbstractIncomingMessage,
@@ -16,8 +16,8 @@ async def message_router(
         if body.get('type') == 'test_message':
             return test_task(body)
         
-        if 'urn:message:Edil.Shared.Contracts.Events:ProductChangedEvent' in body.get('messageType') \
-        	and set(body['message']['updatedFields']).intersection(fieldsToWatch):
+        if 'urn:message:Edil.Shared.Contracts.Events:ProductChangedEvent' in body.get('messageType') and \
+        	(not body.get('message').get('updatedFields') or set(body.get('message').get('updatedFields')).intersection(fieldsToWatch)) :
             # return product_changed_event_handler(body)
             loop = asyncio.get_running_loop()
             await loop.run_in_executor(None, product_changed_event_handler, body)
