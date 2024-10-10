@@ -15,6 +15,7 @@ class Output(BaseModel):
 	product_id: int
 	product_name: str
 	product_shortdescription:str
+	cover_name:str
 	score: float = Field(None, alias="_score")
 
 
@@ -103,7 +104,7 @@ async def find_similar_products_by_id(
 				}
 			}
 		},
-		_source= ["product_id", "manufacturer_name", "product_name", "product_shortdescription", "cover_image"]	
+		_source= ["product_id", "manufacturer_name", "product_name", "product_shortdescription", "cover_name"]	
 	)
 
 	return [{**item["_source"], **{'_score':item["_score"]}} for item in search_response['hits']['hits']]
@@ -182,7 +183,7 @@ async def find_similiar_products_by_image(
 					}
 				}	
 			},
-			_source= ["product_id", "manufacturer_name", "product_name", "product_shortdescription", "cover_image"]	
+			_source= ["product_id", "manufacturer_name", "product_name", "product_shortdescription", "cover_name"]	
 		)
 
 		return [{**item["_source"], **{'_score':item["_score"]}} for item in search_response['hits']['hits']]
@@ -288,7 +289,7 @@ async def find_products_by_hybrid_search(
 					}
 				}	
 			},
-			_source= ["product_id", "manufacturer_name", "product_name", "product_shortdescription", "cover_image"]	
+			_source= ["product_id", "manufacturer_name", "product_name", "product_shortdescription", "cover_name"]	
 		)
 
 		return [{**item["_source"], **{'_score':item["_score"]}} for item in search_response['hits']['hits']]
