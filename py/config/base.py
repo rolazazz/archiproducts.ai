@@ -18,7 +18,7 @@ class Base(BaseSettings):
     EMBEDDINGS_API_CLIP_URL: str = "http://localhost:7860/clip-embed"
     EMBEDDINGS_API_E5_URL: str = "http://localhost:7860/e5-embed"
     EMBEDDINGS_API_HEADERS: str = "{}"
-    EMBEDDINGS_API_TIMEOUT: float = 5.0
+    EMBEDDINGS_API_TIMEOUT: float = 10
     
 
 
