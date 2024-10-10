@@ -39,7 +39,7 @@ def product_changed_event_handler(message: dict):
 			url=	base_config.EMBEDDINGS_API_CLIP_URL, 
 			headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
 			timeout=base_config.EMBEDDINGS_API_TIMEOUT,
-			data=	'{"image": "'+im_text+'"}'
+			json=	{'image': im_text}
 		)
 		im_embeddings = response.json().get('embeddings')[0]
 
@@ -48,7 +48,7 @@ def product_changed_event_handler(message: dict):
 			url=	base_config.EMBEDDINGS_API_E5_URL, 
 			headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
 			timeout=base_config.EMBEDDINGS_API_TIMEOUT,
-			data=	'{"text": "passage: '+text+'"}'
+			json=	{"text": text}
 		)
 		tx_embeddings = response.json().get('embeddings')[0]
 
