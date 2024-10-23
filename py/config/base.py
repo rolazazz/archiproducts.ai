@@ -13,7 +13,7 @@ class Base(BaseSettings):
     OPENSEARCH_USER: str = 'admin'
     OPENSEARCH_PASSWORD: str = 'admin'
     
-    INDEX_NAME: str = "embeddings-openclip-b-32"
+    INDEX_NAME: str = "openclip-b-32-xlm-roberta-base-multilingual-e5-large"
     
     EMBEDDINGS_API_CLIP_URL: str = "http://localhost:7860/clip-embed"
     EMBEDDINGS_API_E5_URL: str = "http://localhost:7860/e5-embed"
