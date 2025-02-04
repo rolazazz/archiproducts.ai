@@ -1,3 +1,4 @@
+import opensearchpy
 import os, time, requests, base64, json
 import logging
 from config import opensearch_client, base_config
@@ -22,6 +23,7 @@ def product_changed_event_handler(message: dict):
 		if response.ok == False:
 
 			# if the product is offline remove it from the index
+			# if doc doesn't exist, it will raise a not found exception
 			response = opensearch_client.delete(
 				index = base_config.INDEX_NAME,
 				id = product_id
@@ -84,6 +86,9 @@ def product_changed_event_handler(message: dict):
 			)
 
 
+
+	except opensearchpy.exceptions.NotFoundError:
+		pass
 
 	except requests.exceptions.ReadTimeout:
 		raise logging.exception("Timeout generating embeddings from input image")
