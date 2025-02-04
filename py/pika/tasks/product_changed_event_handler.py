@@ -15,58 +15,58 @@ def product_changed_event_handler(message: dict):
 		# sending get request and saving the response as response object
 		response = session.get(
 			url = f'https://www.archiproducts.com/api/products/{product_id}',
-			headers={'appkey':'A1E6B816-4661-46C9-B117-91955C8564E3', 'Accept-Encoding':'gzip, deflate', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36'})
+			headers={'appkey':'584F5FD3-D76A-44B7-AB7E-01D4B8A1B8B7', 'Accept-Encoding':'gzip, deflate', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36'})
 		logging.info(f'https://www.archiproducts.com/api/products/{product_id}, duration = {str(response.elapsed)}')
 		
-		# the product may not exists...
+		
 		if response.ok == False:
-			logging.info(f"Product (id={product_id}) doesn't exist")
-			pass
 
-		# extracting data in json format
-		data = response.json()
-		im_url = data['Image']['Formats']['Large']
+			# if the product is offline remove it from the index
+			response = opensearch_client.delete(
+				index = base_config.INDEX_NAME,
+				id = product_id
+			)
+			logging.info(f"Product (id={product_id}) is offline or doesn't exist")
+			
+		else:
 
-		# coverimage base64 encoding
-		response = session.get(im_url, headers={'whoiam': 'edl-worker', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36'})
-		if response.ok == False:
-			raise logging.error(f"Unable to download image ({im_url})")
-		file = response.content
-		im_text = base64.b64encode(file).decode('utf-8')
+			# extracting data in json format
+			data = response.json()
+			im_url = data['Image']['Formats']['Large']
 
-		# get embeddings with ML model
-		response = session.post(
-			url=	base_config.EMBEDDINGS_API_CLIP_URL, 
-			headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
-			timeout=base_config.EMBEDDINGS_API_TIMEOUT,
-			json=	{'image': im_text}
-		)
-		im_embeddings = response.json().get('embeddings')[0]
+			# coverimage base64 encoding
+			response = session.get(im_url, headers={'whoiam': 'edl-worker', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36'})
+			if response.ok == False:
+				raise logging.error(f"Unable to download image ({im_url})")
+			file = response.content
+			im_text = base64.b64encode(file).decode('utf-8')
 
-		text = f"passage: {data['Name']} {data['ShortDescription']} ({', '.join([x['Name'] for x in data['Features']+data['Materials']+data['Styles'] ])}), produced by {data['Manufacturer']['Name']}{', design by ' if data['Designers'] else ''}{' '.join([x['Name'] for x in data['Designers']])}"
-		response = session.post(
-			url=	base_config.EMBEDDINGS_API_E5_URL, 
-			headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
-			timeout=base_config.EMBEDDINGS_API_TIMEOUT,
-			json=	{"text": text}
-		)
-		tx_embeddings = response.json().get('embeddings')[0]
+			# get embeddings with ML model
+			response = session.post(
+				url=	base_config.EMBEDDINGS_API_CLIP_URL, 
+				headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
+				timeout=base_config.EMBEDDINGS_API_TIMEOUT,
+				json=	{'image': im_text}
+			)
+			if response.ok == False or ():
+				raise logging.error("Unable to generate embeddings from input image")
+			im_embeddings = response.json().get('embeddings')[0]
 
-		logging.info(f'embedding genneration, duration = {str(response.elapsed)}')
+			text = f"passage: {data['Name']} {data['ShortDescription']} ({', '.join([x['Name'] for x in data['Features']+data['Materials']+data['Styles'] ])}), produced by {data['Manufacturer']['Name']}{', design by ' if data['Designers'] else ''}{' '.join([x['Name'] for x in data['Designers']])}"
+			response = session.post(
+				url=	base_config.EMBEDDINGS_API_E5_URL, 
+				headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
+				timeout=base_config.EMBEDDINGS_API_TIMEOUT,
+				json=	{"text": text}
+			)
+			if response.ok == False or ():
+				raise logging.error("Unable to generate embeddings from text")
+			tx_embeddings = response.json().get('embeddings')[0]
 
-	except requests.exceptions.ReadTimeout:
-		raise logging.exception("Timeout generating embeddings from input image")
-	
-	except Exception as exc:
-		raise logging.exception(str(exc))
-	
-	if response.ok == False or ():
-		raise logging.error("Unable to generate embeddings from input image")
+			logging.info(f'embedding genneration, duration = {str(response.elapsed)}')
 
 
-	try:
-
-		doc = {
+			doc = {
 				'product_id' : data['Id'],
 				'product_name': data['Name'],
 				'product_shortdescription': data['ShortDescription'],
@@ -76,19 +76,25 @@ def product_changed_event_handler(message: dict):
 				'cover_embeddings': im_embeddings,
 				'text_embeddings': tx_embeddings
 			}
-		response = opensearch_client.index(
-			index = base_config.INDEX_NAME,
-			body = doc,
-			id = data['Id'],
-			refresh = True
-		)
+			response = opensearch_client.index(
+				index = base_config.INDEX_NAME,
+				body = doc,
+				id = data['Id'],
+				refresh = True
+			)
 
-		duration = time.perf_counter() - start_time
-		# print(f'Duration = {duration}')
-		logging.info(f'Total Duration = {duration}')
 
+
+	except requests.exceptions.ReadTimeout:
+		raise logging.exception("Timeout generating embeddings from input image")
 	
 	except Exception as exc:
-		raise Exception(status_code=500, detail=str(exc))
+		raise logging.exception(str(exc))
+	
+	
 
 
+
+	duration = time.perf_counter() - start_time
+	# print(f'Duration = {duration}')
+	logging.info(f'Total Duration = {duration}')
