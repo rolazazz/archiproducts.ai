@@ -56,7 +56,7 @@ def product_changed_event_handler(message: dict):
 
 			text = f"passage: {data['Name']} {data['ShortDescription']} ({', '.join([x['Name'] for x in data['Features']+data['Materials']+data['Styles'] ])}), produced by {data['Manufacturer']['Name']}{', design by ' if data['Designers'] else ''}{' '.join([x['Name'] for x in data['Designers']])}"
 			response = session.post(
-				url=	base_config.EMBEDDINGS_API_E5_URL, 
+				url=	base_config.EMBEDDINGS_API_SENTENCE_URL_URL, 
 				headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
 				timeout=base_config.EMBEDDINGS_API_TIMEOUT,
 				json=	{"text": text}
@@ -80,6 +80,34 @@ def product_changed_event_handler(message: dict):
 			}
 			response = opensearch_client.index(
 				index = base_config.INDEX_NAME,
+				body = doc,
+				id = data['Id'],
+				refresh = True
+			)
+
+
+			# get embeddings with ML model
+			response = session.post(
+				url=	base_config.EMBEDDINGS_API_IMAGE_URL, 
+				headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
+				timeout=base_config.EMBEDDINGS_API_TIMEOUT,
+				json=	{'image': im_text}
+			)
+			if response.ok == False or ():
+				raise logging.error("Unable to generate embeddings from input image")
+			im_embeddings = response.json().get('embeddings')[0]
+
+			doc = {
+				'product_id' : data['Id'],
+				'product_name': data['Name'],
+				'product_shortdescription': data['ShortDescription'],
+				'manufacturer_name': data['Manufacturer']['Name'],
+				'cover_id': data['Image']['FileName'],
+				'cover_name': os.path.basename(data['Image']['FileName']),
+				'cover_embeddings': im_embeddings
+			}
+			response = opensearch_client.index(
+				index = base_config.INDEX2_NAME,
 				body = doc,
 				id = data['Id'],
 				refresh = True

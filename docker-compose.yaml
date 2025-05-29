@@ -1,4 +1,4 @@
-version: '3.9'
+#version: '3.9'
 
 services:
 
@@ -14,7 +14,8 @@ services:
     environment:
       - OPENSEARCH_HOST=opensearch-node1
       - EMBEDDINGS_API_CLIP_URL=http://openclip-api:7860/clip-embed
-      - EMBEDDINGS_API_E5_URL=http://openclip-api:7860/e5-embed
+      - EMBEDDINGS_API_SENTENCE_URL=http://openclip-api:7860/sentence-embed
+      - EMBEDDINGS_API_IMAGE_URL=http://openclip-api:7860/image-embed
     ports:
       - "8000:8000"
     networks:

@@ -6,7 +6,50 @@ from config import rabbit_connection, opensearch_client, base_config
 import requests, json, base64
 from typing import Annotated
 from urllib.request import *
+import torch
+from PIL import Image
+from io import BytesIO
+# from torchvision import transforms
+# from transformers import AutoModelForImageSegmentation
+from ben2 import BEN_Base
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
+
+# rmbgmodel = AutoModelForImageSegmentation.from_pretrained('briaai/RMBG-2.0', trust_remote_code=True)
+# # torch.set_float32_matmul_precision(['high', 'highest'][0])
+# rbgmodel.to(device)
+# rmbgmodel.eval()
+# # Data settings
+# image_size = (512, 512)
+# transform_image = transforms.Compose([
+#     transforms.Resize(image_size),
+#     transforms.ToTensor(),
+#     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+# ])
+
+# ben2
+ben2model = BEN_Base.from_pretrained("PramaLLC/BEN2")
+ben2model.to(device).eval()
+
+# birefnet = AutoModelForImageSegmentation.from_pretrained('ZhengPeng7/BiRefNet', trust_remote_code=True)
+# torch.set_float32_matmul_precision(['high', 'highest'][0])
+# birefnet.to(device)
+# birefnet.eval()
+# birefnet.half()
+# # # Data settings
+# image_size = (1024, 1024)
+# transform_image = transforms.Compose([
+#     transforms.Resize(image_size),
+#     transforms.ToTensor(),
+#     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+# ])
+
+# InSPyReNet
+# from transparent_background import Remover
+# remover = Remover(mode='fast', jit=False, device=device)
+
+# rembg
+# from rembg import remove, new_session
 
 visualsearch_router = APIRouter(tags=['Visual search routes'])
 
@@ -138,14 +181,65 @@ async def find_similiar_products_by_image(
 			file = request.content
 		except:
 			raise HTTPException(status_code=400, detail=f"Unable to download file from given url '{url}'")
-	
 	# else use attached file
 
-	im_text = base64.b64encode(file).decode('utf-8')
+	image = Image.open(BytesIO(file)).convert("RGB")
+	# image.thumbnail((2048,2048), Image.Resampling.LANCZOS)
+
+	# briaai/RMBG-2.0
+	# input_images = transform_image(image).unsqueeze(0)#.to(device)
+	# # Prediction
+	# with torch.no_grad():
+	# 	preds = rbgmodel(input_images)[-1].sigmoid()#.cpu()
+	# pred = preds[0].squeeze()
+	# pred_pil = transforms.ToPILImage()(pred)
+	# mask = pred_pil.resize(image.size)
+	# image.putalpha(mask)
+	# new_image = Image.new("RGBA", image.size, "WHITE") # Create a white rgba background
+	# new_image.paste(image, (0, 0), image)
+	# new_image = new_image.convert('RGB')
+
+	# ben2
+	foreground = ben2model.inference(image, refine_foreground=False,)
+	new_image = Image.new("RGBA", image.size, "WHITE") # Create a white rgba background
+	new_image.paste(foreground, (0, 0), foreground)
+	new_image = new_image.convert('RGB')
+	# new_image.save('output.jpg')
+
+	# birefnet
+	# input_images = transform_image(image).unsqueeze(0).to(device).half()
+	# # Prediction
+	# with torch.no_grad():
+	# 	preds = birefnet(input_images)[-1].sigmoid().cpu()
+	# pred = preds[0].squeeze()
+	# pred_pil = transforms.ToPILImage()(pred)
+	# mask = pred_pil.resize(image.size)
+	# image.putalpha(mask)
+	# new_image = Image.new("RGBA", image.size, "WHITE") # Create a white rgba background
+	# new_image.paste(image, (0, 0), image)
+	# new_image.convert('RGB').save('output.jpg')
+
+	# InSPyReNet
+	# foreground = remover.process(image)
+	# new_image = Image.new("RGBA", image.size, "WHITE") # Create a white rgba background
+	# new_image.paste(foreground, (0, 0), foreground)
+	# new_image.convert('RGB').save('output.jpg')
+
+	# rembg
+	# new_image = remove(image, 
+	# 				session=new_session('birefnet-general'), 
+	# 				bgcolor=(255, 255, 255, 255))
+	# new_image.convert('RGB').save('output.jpg')
+
+	buffered = BytesIO()
+	new_image.convert("RGB").save(buffered, format="JPEG")
+
+	# encode the image
+	im_text = base64.b64encode(buffered.getvalue()).decode('utf-8')
 
 	try:
 		response = requests.post(
-			url=	base_config.EMBEDDINGS_API_CLIP_URL, 
+			url=	base_config.EMBEDDINGS_API_IMAGE_URL, 
 			headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
 			timeout=base_config.EMBEDDINGS_API_TIMEOUT,
 			data=	'{"image": "'+im_text+'"}'
@@ -165,7 +259,7 @@ async def find_similiar_products_by_image(
 		embeddings = json.loads(response.text).get('embeddings')[0]
 
 		search_response = opensearch_client.search(
-			index= base_config.INDEX_NAME,
+			index= base_config.INDEX2_NAME,
 			body= {
 				"from": from_,
 				"size": size,

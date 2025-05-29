@@ -5,6 +5,9 @@ from logging.handlers import RotatingFileHandler
 from config import base_config, RABBIT_URL
 from pika import message_router
 from localizations import consumer
+from dotenv import load_dotenv
+
+load_dotenv()
 
 PARALLEL_TASKS = 4
 

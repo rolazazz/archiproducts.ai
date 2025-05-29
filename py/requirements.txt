@@ -6,4 +6,5 @@ pydantic-settings~=2.1
 pika~=1.3
 aio-pika~=9.4
 opensearch-py~=2.4
-
+opencv-python-headless
+git+https://github.com/PramaLLC/BEN2.git#egg=ben2
