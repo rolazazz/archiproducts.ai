@@ -316,7 +316,7 @@ def find_products_by_hybrid_search(
 		)
 		# response = requests.post(url= URL, headers= headers, data= json.dumps({"text":"sofa"}), files = {"form_field_name": file})
 		txt_response = requests.post(
-			url=	base_config.EMBEDDINGS_API_E5_URL, 
+			url=	base_config.EMBEDDINGS_API_SENTENCE_URL, 
 			headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
 			timeout=base_config.EMBEDDINGS_API_TIMEOUT,
 			data=	'{"text": "query: '+query+'"}'
