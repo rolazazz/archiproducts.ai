@@ -12,7 +12,7 @@ from io import BytesIO
 # from torchvision import transforms
 # from transformers import AutoModelForImageSegmentation
 from ben2 import BEN_Base
-
+import time
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
 
 # rmbgmodel = AutoModelForImageSegmentation.from_pretrained('briaai/RMBG-2.0', trust_remote_code=True)
@@ -68,7 +68,7 @@ def index():
 
 
 @visualsearch_router.get('/similar_products', response_model=list[Output])
-async def find_similar_products_by_id(
+def find_similar_products_by_id(
 	product_id:	Annotated[int,	Query(description="The product_id to search for similarity")] = None, 
 	image_id:	Annotated[str,	Query(description="The image_id to search for similarity")] = "",
 	from_:	 	Annotated[int,	Query(description="Starting document offset. Needs to be non-negative and defaults to 0.", alias="from", min=0)] = 0,
@@ -154,7 +154,7 @@ async def find_similar_products_by_id(
 
 
 @visualsearch_router.post('/reverse_search', response_model=list[Output])
-async def find_similiar_products_by_image(
+def find_similiar_products_by_image(
 	file:		Annotated[bytes,File(description="An attached binary file that will be used for similarity search")] = None,
 	url:		Annotated[str,	Form(description="The Url an image that will be used for similarity search")] = None, 
 	from_:	 	Annotated[int,	Form(description="Starting document offset. Needs to be non-negative and defaults to 0.", alias="from", min=0)] = 0,
@@ -287,7 +287,7 @@ async def find_similiar_products_by_image(
 
 
 @visualsearch_router.post('/hybrid_search', response_model=list[Output])
-async def find_products_by_hybrid_search(
+def find_products_by_hybrid_search(
 	query:		Annotated[str,	Body(description="Query of the image to search")] = None, 
 	from_:	 	Annotated[int,	Body(description="Starting document offset. Needs to be non-negative and defaults to 0.", alias="from", min=0)] = 0,
 	size: 		Annotated[int,	Body(description="Defines the number of hits to return. Defaults to 25.", max=100)] = 25,
