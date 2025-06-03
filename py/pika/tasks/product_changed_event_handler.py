@@ -56,7 +56,7 @@ def product_changed_event_handler(message: dict):
 
 			text = f"passage: {data['Name']} {data['ShortDescription']} ({', '.join([x['Name'] for x in data['Features']+data['Materials']+data['Styles'] ])}), produced by {data['Manufacturer']['Name']}{', design by ' if data['Designers'] else ''}{' '.join([x['Name'] for x in data['Designers']])}"
 			response = session.post(
-				url=	base_config.EMBEDDINGS_API_SENTENCE_URL_URL, 
+				url=	base_config.EMBEDDINGS_API_SENTENCE_URL, 
 				headers=json.loads(base_config.EMBEDDINGS_API_HEADERS),
 				timeout=base_config.EMBEDDINGS_API_TIMEOUT,
 				json=	{"text": text}
