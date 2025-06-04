@@ -28,6 +28,10 @@ def product_changed_event_handler(message: dict):
 				index = base_config.INDEX_NAME,
 				id = product_id
 			)
+			response = opensearch_client.delete(
+				index = base_config.INDEX2_NAME,
+				id = product_id
+			)
 			logging.info(f"Product (id={product_id}) is offline or doesn't exist")
 			
 		else:

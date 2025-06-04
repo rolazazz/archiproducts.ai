@@ -159,7 +159,8 @@ def find_similiar_products_by_image(
 	url:		Annotated[str,	Form(description="The Url an image that will be used for similarity search")] = None, 
 	from_:	 	Annotated[int,	Form(description="Starting document offset. Needs to be non-negative and defaults to 0.", alias="from", min=0)] = 0,
 	size: 		Annotated[int,	Form(description="Defines the number of hits to return. Defaults to 25.", max=100)] = 25,
-	min_score:	Annotated[float,Form(description="Minimum _score for matching documents: documents with a lower _score are not included in the search results", max=1)] = 0):
+	min_score:	Annotated[float,Form(description="Minimum _score for matching documents: documents with a lower _score are not included in the search results", max=1)] = 0,
+	remove_background:	Annotated[bool, Form(description="Remove background from input image")] = False):
 	"""
 	### Reverse Image Search with a given image.
 	A reverse image search is the use of a photo to search online without text.
@@ -183,59 +184,64 @@ def find_similiar_products_by_image(
 			raise HTTPException(status_code=400, detail=f"Unable to download file from given url '{url}'")
 	# else use attached file
 
-	image = Image.open(BytesIO(file)).convert("RGB")
-	# image.thumbnail((2048,2048), Image.Resampling.LANCZOS)
 
-	# briaai/RMBG-2.0
-	# input_images = transform_image(image).unsqueeze(0)#.to(device)
-	# # Prediction
-	# with torch.no_grad():
-	# 	preds = rbgmodel(input_images)[-1].sigmoid()#.cpu()
-	# pred = preds[0].squeeze()
-	# pred_pil = transforms.ToPILImage()(pred)
-	# mask = pred_pil.resize(image.size)
-	# image.putalpha(mask)
-	# new_image = Image.new("RGBA", image.size, "WHITE") # Create a white rgba background
-	# new_image.paste(image, (0, 0), image)
-	# new_image = new_image.convert('RGB')
+	if (remove_background):
+		image = Image.open(BytesIO(file)).convert("RGB")
+		# image.thumbnail((2048,2048), Image.Resampling.LANCZOS)
 
-	# ben2
-	foreground = ben2model.inference(image, refine_foreground=False,)
-	new_image = Image.new("RGBA", image.size, "WHITE") # Create a white rgba background
-	new_image.paste(foreground, (0, 0), foreground)
-	new_image = new_image.convert('RGB')
-	# new_image.save('output.jpg')
+		# briaai/RMBG-2.0
+		# input_images = transform_image(image).unsqueeze(0)#.to(device)
+		# # Prediction
+		# with torch.no_grad():
+		# 	preds = rbgmodel(input_images)[-1].sigmoid()#.cpu()
+		# pred = preds[0].squeeze()
+		# pred_pil = transforms.ToPILImage()(pred)
+		# mask = pred_pil.resize(image.size)
+		# image.putalpha(mask)
+		# new_image = Image.new("RGBA", image.size, "WHITE") # Create a white rgba background
+		# new_image.paste(image, (0, 0), image)
+		# new_image = new_image.convert('RGB')
 
-	# birefnet
-	# input_images = transform_image(image).unsqueeze(0).to(device).half()
-	# # Prediction
-	# with torch.no_grad():
-	# 	preds = birefnet(input_images)[-1].sigmoid().cpu()
-	# pred = preds[0].squeeze()
-	# pred_pil = transforms.ToPILImage()(pred)
-	# mask = pred_pil.resize(image.size)
-	# image.putalpha(mask)
-	# new_image = Image.new("RGBA", image.size, "WHITE") # Create a white rgba background
-	# new_image.paste(image, (0, 0), image)
-	# new_image.convert('RGB').save('output.jpg')
+		# ben2
+		foreground = ben2model.inference(image, refine_foreground=False,)
+		new_image = Image.new("RGBA", image.size, "WHITE") # Create a white rgba background
+		new_image.paste(foreground, (0, 0), foreground)
+		new_image = new_image.convert('RGB')
+		# new_image.save('output.jpg')
 
-	# InSPyReNet
-	# foreground = remover.process(image)
-	# new_image = Image.new("RGBA", image.size, "WHITE") # Create a white rgba background
-	# new_image.paste(foreground, (0, 0), foreground)
-	# new_image.convert('RGB').save('output.jpg')
+		# birefnet
+		# input_images = transform_image(image).unsqueeze(0).to(device).half()
+		# # Prediction
+		# with torch.no_grad():
+		# 	preds = birefnet(input_images)[-1].sigmoid().cpu()
+		# pred = preds[0].squeeze()
+		# pred_pil = transforms.ToPILImage()(pred)
+		# mask = pred_pil.resize(image.size)
+		# image.putalpha(mask)
+		# new_image = Image.new("RGBA", image.size, "WHITE") # Create a white rgba background
+		# new_image.paste(image, (0, 0), image)
+		# new_image.convert('RGB').save('output.jpg')
 
-	# rembg
-	# new_image = remove(image, 
-	# 				session=new_session('birefnet-general'), 
-	# 				bgcolor=(255, 255, 255, 255))
-	# new_image.convert('RGB').save('output.jpg')
+		# InSPyReNet
+		# foreground = remover.process(image)
+		# new_image = Image.new("RGBA", image.size, "WHITE") # Create a white rgba background
+		# new_image.paste(foreground, (0, 0), foreground)
+		# new_image.convert('RGB').save('output.jpg')
 
-	buffered = BytesIO()
-	new_image.convert("RGB").save(buffered, format="JPEG")
+		# rembg
+		# new_image = remove(image, 
+		# 				session=new_session('birefnet-general'), 
+		# 				bgcolor=(255, 255, 255, 255))
+		# new_image.convert('RGB').save('output.jpg')
 
-	# encode the image
-	im_text = base64.b64encode(buffered.getvalue()).decode('utf-8')
+		buffered = BytesIO()
+		new_image.convert("RGB").save(buffered, format="JPEG")
+		# encode the image
+		im_text = base64.b64encode(buffered.getvalue()).decode('utf-8')
+	else:
+		# encode the image
+		im_text = base64.b64encode(file).decode('utf-8')
+
 
 	try:
 		response = requests.post(
